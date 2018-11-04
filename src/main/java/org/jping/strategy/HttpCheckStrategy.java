@@ -1,8 +1,9 @@
-package org.jping;
+package org.jping.strategy;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jping.data.CommandResult;
 import org.jping.data.Report;
+import org.jping.report.Reporting;
 import org.jping.utils.TimingUtils;
 
 import java.io.IOException;
@@ -88,7 +89,7 @@ public class HttpCheckStrategy implements NetworkCheckStrategy {
       responseTime = Duration.between(start, end).toMillis();
 
       reporting.addMessage(Report.builder()
-        .type("http")
+        .type("tcp_ping")
         .line(String.format("http code=%s time=%d ms", responseCode, responseTime))
         .host(host)
         .dateTime(LocalDateTime.now())

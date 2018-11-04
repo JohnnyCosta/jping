@@ -1,7 +1,8 @@
-package org.jping;
+package org.jping.strategy;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jping.data.CommandResult;
+import org.jping.report.Reporting;
 import org.jping.utils.ShellUtils;
 import org.jping.utils.TimingUtils;
 
@@ -10,7 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 @Slf4j
-public class TraceCheckStrategy implements NetworkCheckStrategy{
+public class TraceCheckStrategy implements NetworkCheckStrategy {
 
   private ExecutorService executor;
   private Long howLong;

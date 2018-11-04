@@ -18,7 +18,7 @@ public class FileUtils {
 
   public static ThrowingFunction<String, Properties> readProperties = FileUtils::readPropertiesFromFile;
 
-  private static Properties readPropertiesFromFile(String fileName) throws IOException {
+  public static Properties readPropertiesFromFile(String fileName) throws IOException {
     InputStream is = FileUtils.class.getResourceAsStream(fileName);
     if (Objects.isNull(is)) {
       throw new IOException("Something is wrong with the file");

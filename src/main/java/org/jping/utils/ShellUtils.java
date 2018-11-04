@@ -1,9 +1,9 @@
 package org.jping.utils;
 
 import lombok.extern.slf4j.Slf4j;
-import org.jping.Reporting;
 import org.jping.data.CommandResult;
 import org.jping.data.Report;
+import org.jping.report.Reporting;
 
 import java.io.IOException;
 import java.time.Instant;

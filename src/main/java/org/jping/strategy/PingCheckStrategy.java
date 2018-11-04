@@ -1,7 +1,8 @@
-package org.jping;
+package org.jping.strategy;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jping.data.CommandResult;
+import org.jping.report.Reporting;
 import org.jping.utils.ShellUtils;
 
 import java.util.concurrent.ExecutorService;
@@ -23,6 +24,6 @@ public class PingCheckStrategy implements NetworkCheckStrategy {
     log.info("ping check to host: {}", host);
 
     String[] args = new String[]{"ping", "-n", host};
-    return executor.submit(() -> ShellUtils.executeCommand(executor, args, reporting, howLong, host, "ping"));
+    return executor.submit(() -> ShellUtils.executeCommand(executor, args, reporting, howLong, host, "icmp_ping"));
   }
 }

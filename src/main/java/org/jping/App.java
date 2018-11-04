@@ -2,6 +2,11 @@ package org.jping;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jping.data.CommandResult;
+import org.jping.report.Reporting;
+import org.jping.strategy.HttpCheckStrategy;
+import org.jping.strategy.NetworkCheckStrategy;
+import org.jping.strategy.PingCheckStrategy;
+import org.jping.strategy.TraceCheckStrategy;
 import org.jping.utils.ThrowingFunction;
 
 import java.util.List;
@@ -19,13 +24,16 @@ import static org.jping.utils.ShellUtils.waitFutures;
 @Slf4j
 public class App {
 
-  private static volatile Reporting reporting = new Reporting();
+  private static volatile Reporting reporting;
 
   public static void main(String[] args) {
     Properties properties = readProperties.apply("/application.properties");
 
     List<String> addresses = listFromPrefix(properties, "app.host.");
     log.info("{}", addresses);
+
+    reporting = new Reporting(properties.getProperty("reporting.url"),
+      new Integer(properties.getProperty("reporting.timeout")));
 
     ExecutorService executor = Executors.newFixedThreadPool(30);
 
