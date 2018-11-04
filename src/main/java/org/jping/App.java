@@ -7,6 +7,8 @@ import org.jping.strategy.HttpCheckStrategy;
 import org.jping.strategy.NetworkCheckStrategy;
 import org.jping.strategy.PingCheckStrategy;
 import org.jping.strategy.TraceCheckStrategy;
+import org.jping.utils.HttpSend;
+import org.jping.utils.ShellCommands;
 import org.jping.utils.ThrowingFunction;
 
 import java.util.List;
@@ -18,7 +20,7 @@ import java.util.concurrent.Future;
 
 import static org.jping.utils.FileUtils.listFromPrefix;
 import static org.jping.utils.FileUtils.readProperties;
-import static org.jping.utils.ShellUtils.waitFutures;
+import static org.jping.utils.ShellCommands.waitFutures;
 
 
 @Slf4j
@@ -32,20 +34,23 @@ public class App {
     List<String> addresses = listFromPrefix(properties, "app.host.");
     log.info("{}", addresses);
 
-    reporting = new Reporting(properties.getProperty("reporting.url"),
-      new Integer(properties.getProperty("reporting.timeout")));
+    HttpSend httpSend = new HttpSend(new Integer(properties.getProperty("reporting.timeout")));
+
+    reporting = new Reporting(properties.getProperty("reporting.url"), httpSend);
 
     ExecutorService executor = Executors.newFixedThreadPool(30);
 
+    ShellCommands shellCommands = new ShellCommands(executor);
+
     addresses.parallelStream()
       .forEach(addr -> {
-        NetworkCheckStrategy pingCheck = new PingCheckStrategy(executor, 5000L);
+        NetworkCheckStrategy pingCheck = new PingCheckStrategy(executor, 5000L, shellCommands);
         Future<CommandResult> futurePingCheck = pingCheck.check(addr, reporting);
 
-        NetworkCheckStrategy httpCheck = new HttpCheckStrategy(executor, 5000L, 1000, 1000);
+        NetworkCheckStrategy httpCheck = new HttpCheckStrategy(executor, 5000L, 1000, httpSend);
         Future<CommandResult> futureHttpCheck = httpCheck.check(addr, reporting);
 
-        NetworkCheckStrategy traceCheck = new TraceCheckStrategy(executor, 5000L, 1000, 1000);
+        NetworkCheckStrategy traceCheck = new TraceCheckStrategy(executor, 5000L, shellCommands);
         Future<CommandResult> futureTraceCheck = traceCheck.check(addr, reporting);
 
         Future<?>[] futures = new Future[]{futurePingCheck, futureHttpCheck, futureTraceCheck};

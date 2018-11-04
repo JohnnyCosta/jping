@@ -1,11 +1,14 @@
 package org.jping.utils;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class FileUtilsTest {
 
@@ -14,7 +17,7 @@ public class FileUtilsTest {
 
     FileUtils.readPropertiesFromFile("invalid");
 
-    Assert.fail();
+    fail();
   }
 
   @Test (expected = RuntimeException.class)
@@ -22,7 +25,7 @@ public class FileUtilsTest {
 
     FileUtils.readProperties.apply("invalid");
 
-    Assert.fail();
+    fail();
   }
 
   @Test
@@ -30,13 +33,13 @@ public class FileUtilsTest {
     Properties properties = FileUtils.readProperties.apply("/application.properties");
 
     List<String> invalidList = FileUtils.listFromPrefix(properties, "invalid");
-    Assert.assertEquals(0,invalidList.size() );
+    assertEquals(0,invalidList.size() );
 
     List<String> validList = FileUtils.listFromPrefix(properties, "app.host.");
-    Assert.assertEquals(3,validList.size() );
-    Assert.assertTrue(validList.contains("google.com"));
-    Assert.assertTrue(validList.contains("jasmin.com"));
-    Assert.assertTrue(validList.contains("oranum.com"));
+    assertEquals(3,validList.size() );
+    assertTrue(validList.contains("google.com"));
+    assertTrue(validList.contains("jasmin.com"));
+    assertTrue(validList.contains("oranum.com"));
 
   }
 }

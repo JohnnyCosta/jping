@@ -1,10 +1,11 @@
 package org.jping.report;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jping.data.HttpResult;
 import org.jping.data.Report;
+import org.jping.data.ReportResult;
+import org.jping.utils.HttpSend;
 
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -20,7 +21,7 @@ import static java.util.stream.Collectors.toSet;
 public class Reporting {
 
   private String url;
-  private int timeout;
+  private HttpSend httpSend;
 
   private volatile List<Report> messages = Collections.synchronizedList(new ArrayList<>());
 
@@ -28,9 +29,9 @@ public class Reporting {
 
   private volatile Map<String, Report> latest = Collections.synchronizedMap(new HashMap<>());
 
-  public Reporting(String url, int timeout) {
+  public Reporting(String url, HttpSend httpSend) {
     this.url = url;
-    this.timeout = timeout;
+    this.httpSend = httpSend;
   }
 
   public synchronized void addMessage(Report report) {
@@ -47,7 +48,7 @@ public class Reporting {
     postString(mapToJson(latest, report.getHost()));
   }
 
-  public void report() {
+  public ReportResult report() {
     log.info("Messages: ");
     messages
       .forEach(msg -> {
@@ -62,26 +63,21 @@ public class Reporting {
 
     log.info("Latests: {}", mapToJson(latest));
 
-    postString(mapToJson(latest, "google.com"));
+   return ReportResult.builder()
+      .errors(Collections.synchronizedList(errors))
+      .messages(Collections.synchronizedList(messages))
+      .latest(latest.entrySet().stream()
+        .map(Map.Entry::getValue)
+        .collect(groupingBy(Report::getHost, toSet())))
+      .build();
 
   }
 
   private void postString(String value) {
     log.debug("Sending report: {}", value);
     try {
-      URL postUrl = new URL(url);
-      HttpURLConnection connection = (HttpURLConnection) postUrl.openConnection();
-      connection.setDoOutput(true);
-      connection.setInstanceFollowRedirects(false);
-      connection.setRequestMethod("POST");
-      connection.setRequestProperty("Content-Type", "text/plain");
-      connection.setRequestProperty("charset", "utf-8");
-      connection.setConnectTimeout(timeout);
-
-      connection.connect();
-      int responseCode = connection.getResponseCode();
-
-      log.info(String.format("report post code=%s", responseCode));
+      HttpResult httpResult = httpSend.send(value, url, "POST", "application/json", "utf-8");
+      log.info(String.format("report post code=%s", httpResult.getCode()));
     } catch (Exception e) {
       log.error("Error to post report", e);
     }

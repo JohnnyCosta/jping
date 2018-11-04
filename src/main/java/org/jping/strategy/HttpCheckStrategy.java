@@ -2,13 +2,13 @@ package org.jping.strategy;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jping.data.CommandResult;
+import org.jping.data.HttpResult;
 import org.jping.data.Report;
 import org.jping.report.Reporting;
+import org.jping.utils.HttpSend;
 import org.jping.utils.TimingUtils;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -23,12 +23,13 @@ public class HttpCheckStrategy implements NetworkCheckStrategy {
   private Long howLong;
   private int timeout;
   private long wait;
+  private HttpSend httpSend;
 
-  public HttpCheckStrategy(ExecutorService executor, Long howLong, int timeout, long wait) {
+  public HttpCheckStrategy(ExecutorService executor, Long howLong, long wait, HttpSend httpSend) {
     this.executor = executor;
     this.howLong = howLong;
-    this.timeout = timeout;
     this.wait = wait;
+    this.httpSend = httpSend;
   }
 
   @Override
@@ -49,48 +50,32 @@ public class HttpCheckStrategy implements NetworkCheckStrategy {
     });
   }
 
-  private void checkHost (String host, Reporting reporting) throws InterruptedException {
+  private void checkHost(String host, Reporting reporting) throws InterruptedException {
     Instant start = Instant.now();
     Instant now = Instant.now();
     boolean passedMax = TimingUtils.passedMaxTime(howLong, start, now);
     while (!passedMax) {
-      sendRequest(host, timeout, reporting);
+      sendRequest(host, reporting);
       Thread.sleep(wait);
       now = Instant.now();
       passedMax = TimingUtils.passedMaxTime(howLong, start, now);
     }
   }
 
-  private void sendRequest(String host, int timeout, Reporting reporting) {
-    URL url;
-    HttpURLConnection connection;
+  private void sendRequest(String host, Reporting reporting) {
     Instant start = null;
     Instant end;
-
-    int responseCode;
-//    String responseBody;
     long responseTime;
+
     try {
-      url = new URL("http://" + host);
-      connection = (HttpURLConnection) url.openConnection();
-      connection.setDoOutput(true);
-      connection.setInstanceFollowRedirects(false);
-      connection.setRequestMethod("GET");
-      connection.setRequestProperty("Content-Type", "text/plain");
-      connection.setRequestProperty("charset", "utf-8");
-      connection.setConnectTimeout(timeout);
-
       start = Instant.now();
-      connection.connect();
+      HttpResult httpResult = httpSend.send("http://" + host, "GET", "text/plain", "utf-8");
       end = Instant.now();
-
-      responseCode = connection.getResponseCode();
-//      responseBody = connection.getResponseMessage();
       responseTime = Duration.between(start, end).toMillis();
 
       reporting.addMessage(Report.builder()
         .type("tcp_ping")
-        .line(String.format("http code=%s time=%d ms", responseCode, responseTime))
+        .line(String.format("http code=%s time=%d ms", httpResult.getCode(), responseTime))
         .host(host)
         .dateTime(LocalDateTime.now())
         .build());
@@ -101,7 +86,7 @@ public class HttpCheckStrategy implements NetworkCheckStrategy {
       } else {
         responseTime = 0;
       }
-      reporting.addMessage(Report.builder()
+      reporting.addError(Report.builder()
         .type("http")
         .line(String.format("error='%s' time=%d ms", e.getLocalizedMessage(), responseTime))
         .host(host)

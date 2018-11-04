@@ -15,17 +15,20 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 @Slf4j
-public class ShellUtils {
+public class ShellCommands {
 
-  private ShellUtils() {
+  private ExecutorService executor;
+
+  public ShellCommands(ExecutorService executor) {
+    this.executor = executor;
   }
 
-  public static CommandResult executeCommand(ExecutorService executor, String[] args, Reporting reporting, Long howLong,
+  public CommandResult executeCommand(String[] args, Reporting reporting, Long howLong,
                                              String host, String type) {
-    return executeCommand(executor, args, reporting, howLong, host, type, false);
+    return executeCommand(args, reporting, howLong, host, type, false);
   }
 
-  public static CommandResult executeCommand(ExecutorService executor, String[] args, Reporting reporting, Long howLong,
+  public CommandResult executeCommand(String[] args, Reporting reporting, Long howLong,
                                              String host, String type, boolean redirectErrorStream) {
     log.info("Sending command: {}", Arrays.asList(args));
     try {
@@ -71,7 +74,7 @@ public class ShellUtils {
   }
 
 
-  public static ThrowingFunction<Future<?>[], Optional<Void>> waitFutures = ShellUtils::waitFutureThrowing;
+  public static ThrowingFunction<Future<?>[], Optional<Void>> waitFutures = ShellCommands::waitFutureThrowing;
 
 
   private static Optional<Void> waitFutureThrowing(Future<?>[] futures) throws InterruptedException {
